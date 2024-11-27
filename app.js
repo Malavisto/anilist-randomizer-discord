@@ -31,79 +31,79 @@ class AniListDiscordBot {
     }
 
     async handleRandomAnimeCommand(interaction) {
-    try {
-        // Immediately defer the reply to prevent timeout
-        await interaction.deferReply({ ephemeral: false });
-
-        const username = interaction.options.getString('username');
-        
-        // Early validation with quick response
-        if (!username) {
-            await interaction.editReply({
-                content: "❌ Please provide a valid AniList username.",
-                ephemeral: true
-            });
-            return;
-        }
-
         try {
-            const accessToken = await this.getAccessToken();
-            const randomAnime = await this.fetchRandomAnime(accessToken, username);
+            // Immediately defer the reply to prevent timeout
+            await interaction.deferReply({ ephemeral: false });
+    
+            const username = interaction.options.getString('username');
             
-            const embed = this.createAnimeEmbed(randomAnime);
-            
-            await interaction.editReply({ 
-                embeds: [embed],
-                ephemeral: false
-            });
-
-        } catch (fetchError) {
-            logger.error('Anime command processing error', { 
-                username, 
-                errorMessage: fetchError.message,
-                errorStack: fetchError.stack
-            });
-
-            // Guaranteed response to prevent "thinking" state
-            await interaction.editReply({
-                content: `❌ Error fetching anime for ${username}. Possible reasons:
-- Invalid AniList username
-- Empty anime list
-- AniList API temporarily unavailable
-- Network connectivity issues`,
-                ephemeral: true
-            });
-        }
-
-    } catch (globalError) {
-        // Last-resort error handling
-        logger.error('Critical error in anime command', {
-            errorMessage: globalError.message,
-            errorStack: globalError.stack
-        });
-
-        try {
-            // Final attempt to respond to interaction
-            if (!interaction.replied && !interaction.deferred) {
-                await interaction.reply({
-                    content: "❌ An unexpected error occurred. Please try again later.",
+            // Early validation with quick response
+            if (!username) {
+                await interaction.editReply({
+                    content: "❌ Please provide a valid AniList username.",
                     ephemeral: true
                 });
-            } else if (interaction.deferred) {
+                return;
+            }
+    
+            try {
+                const accessToken = await this.getAccessToken();
+                const randomAnime = await this.fetchRandomAnime(accessToken, username);
+                
+                const embed = this.createAnimeEmbed(randomAnime);
+                
+                await interaction.editReply({ 
+                    embeds: [embed],
+                    ephemeral: false
+                });
+    
+            } catch (fetchError) {
+                logger.error('Anime command processing error', { 
+                    username, 
+                    errorMessage: fetchError.message,
+                    errorStack: fetchError.stack
+                });
+    
+                // Guaranteed response to prevent "thinking" state
                 await interaction.editReply({
-                    content: "❌ An unexpected error occurred. Please try again later.",
+                    content: `❌ Error fetching anime for ${username}. Possible reasons:
+    - Invalid AniList username
+    - Empty anime list
+    - AniList API temporarily unavailable
+    - Network connectivity issues`,
                     ephemeral: true
                 });
             }
-        } catch (replyError) {
-            // If all else fails, log the error
-            logger.error('Failed to send final error message', {
-                originalError: globalError,
-                replyError
+    
+        } catch (globalError) {
+            // Last-resort error handling
+            logger.error('Critical error in anime command', {
+                errorMessage: globalError.message,
+                errorStack: globalError.stack
             });
+    
+            try {
+                // Final attempt to respond to interaction
+                if (!interaction.replied && !interaction.deferred) {
+                    await interaction.reply({
+                        content: "❌ An unexpected error occurred. Please try again later.",
+                        ephemeral: true
+                    });
+                } else if (interaction.deferred) {
+                    await interaction.editReply({
+                        content: "❌ An unexpected error occurred. Please try again later.",
+                        ephemeral: true
+                    });
+                }
+            } catch (replyError) {
+                // If all else fails, log the error
+                logger.error('Failed to send final error message', {
+                    originalError: globalError,
+                    replyError
+                });
+            }
         }
     }
-}
 
     setupEventListeners() {
         // Bot is ready - register slash commands
@@ -190,6 +190,7 @@ class AniListDiscordBot {
                 lists {
                     entries {
                         media {
+                            id
                             title {
                                 english
                                 romaji
@@ -244,6 +245,7 @@ class AniListDiscordBot {
 
            
         return {
+            id: randomAnime.media.id,
             title: randomAnime.media.title.english || randomAnime.media.title.romaji,
             episodes: randomAnime.media.episodes || 'Unknown',
             format: randomAnime.media.format,
@@ -269,26 +271,86 @@ class AniListDiscordBot {
     }
 
     createAnimeEmbed(anime) {
-        // Create embed with more robust image handling
+        // Clean up description 
+        const cleanDescription = anime.description
+            ? anime.description
+                .replace(/<\/?[^>]+(>|$)/g, '')  // Remove HTML tags
+                .replace(/\s+/g, ' ')  // Replace multiple whitespaces with single space
+                .trim()
+            : 'No description available';
+    
+        // Direct link to the specific anime page using its ID
+        const animeDirectLink = `https://anilist.co/anime/${anime.id}`;
+    
+        // Emoji mapping for different statuses and formats
+        const statusEmojis = {
+            'FINISHED': '✅',
+            'RELEASING': '🔴',
+            'NOT_YET_RELEASED': '⏳',
+            'CANCELLED': '❌'
+        };
+    
+        const formatEmojis = {
+            'TV': '📺',
+            'MOVIE': '🎬',
+            'OVA': '💿',
+            'SPECIAL': '⭐',
+            'MUSIC': '🎵',
+            'ONA': '💻',
+            'MANGA': '📖'
+        };
+    
         const embedBuilder = new EmbedBuilder()
             .setColor('#0099ff')
-            .setTitle(anime.title)
+            .setTitle(`🌟 ${anime.title}`)
+            .setURL(animeDirectLink)
             .setDescription(
-                anime.description 
-                    ? (anime.description.length > 200 
-                        ? anime.description.substring(0, 200) + '...' 
-                        : anime.description)
-                    : 'No description available'
+                `📝 ${cleanDescription.length > 200 
+                    ? cleanDescription.substring(0, 200) + '...' 
+                    : cleanDescription}`
             )
             .addFields(
-                { name: 'Status', value: anime.status, inline: true},
-                { name: 'Episodes', value: anime.episodes.toString(), inline: true },
-                { name: 'Format', value: anime.format, inline: true },
-                { name: 'Year', value: anime.year?.toString() || 'Unknown', inline: true },
-                { name: 'Genres', value: anime.genres.join(', ') || 'No genres', inline: false },
-                { name: 'Your Score', value: anime.userScore?.toString() || 'Not rated', inline: true },
-                { name: 'Average Score', value: `${anime.averageScore || 'N/A'}%`, inline: true }
-            );
+                { 
+                    name: '📡 Status', 
+                    value: `${statusEmojis[anime.status] || '❓'} ${anime.status}`, 
+                    inline: true
+                },
+                { 
+                    name: '🎞️ Episodes', 
+                    value: `🔢 ${anime.episodes.toString()}`, 
+                    inline: true 
+                },
+                { 
+                    name: '🎭 Format', 
+                    value: `${formatEmojis[anime.format] || '🎴'} ${anime.format}`, 
+                    inline: true 
+                },
+                { 
+                    name: '📅 Year', 
+                    value: `🗓️ ${anime.year?.toString() || 'Unknown'}`, 
+                    inline: true 
+                },
+                { 
+                    name: '🏷️ Genres', 
+                    value: anime.genres.length > 0 
+                        ? anime.genres.map(genre => `#${genre}`).join(' ') 
+                        : 'No genres', 
+                    inline: false 
+                },
+                { 
+                    name: '⭐ Your Score', 
+                    value: `📊 ${anime.userScore?.toString() || 'Not rated'}`, 
+                    inline: true 
+                },
+                { 
+                    name: '📈 Average Score', 
+                    value: `🌈 ${anime.averageScore || 'N/A'}%`, 
+                    inline: true 
+                }
+            )
+            .setFooter({ 
+                text: '🔗 Click title to view on AniList' 
+            });
     
         // Add thumbnail only if a valid image URL exists
         if (anime.coverImage && isValidHttpUrl(anime.coverImage)) {
