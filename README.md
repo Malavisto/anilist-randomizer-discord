@@ -1,6 +1,8 @@
-## Anime Randomizer for Discord
+## Anilist Randomizer for Discord
 
 A Discord bot that connects with [AniList](https://anilist.co/) to randomly select anime from a user's AniList profile. This bot makes it easy to pick your next watch by fetching detailed information about a random anime from your lists.
+
+**This bot is not affiliated with [Anilist](https://anilist.co) nor [Discord](https://discord.com)**
 
 ## Features
 
