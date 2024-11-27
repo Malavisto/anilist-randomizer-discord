@@ -32,7 +32,7 @@ class AniListDiscordBot {
 
     async handleRandomAnimeCommand(interaction) {
         // Immediately defer the reply to give more processing time
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ ephemeral: false });
 
         try {
             const username = interaction.options.getString('username');
@@ -104,38 +104,12 @@ class AniListDiscordBot {
             logger.error('Discord client error', { error });
         });
         
+        // Interaction create event (handles slash commands)
         this.client.on('interactionCreate', async (interaction) => {
             if (!interaction.isChatInputCommand()) return;
 
             if (interaction.commandName === 'randomanime') {
                 await this.handleRandomAnimeCommand(interaction);
-            }
-        });
-
-        // Interaction create event (handles slash commands)
-        this.client.on('interactionCreate', async (interaction) => {
-            if (!interaction.isChatInputCommand()) return;
-
-            // Handle random anime command
-            if (interaction.commandName === 'randomanime') {
-                // Get username from command option
-                const username = interaction.options.getString('username');
-
-                try {
-                    // Get access token and random anime
-                    const accessToken = await this.getAccessToken();
-                    const randomAnime = await this.fetchRandomAnime(accessToken, username);
-                    
-                    // Create and send embed
-                    const embed = this.createAnimeEmbed(randomAnime);
-                    await interaction.reply({ embeds: [embed] });
-                } catch (error) {
-                    console.error('Anime fetch error:', error);
-                    await interaction.reply({
-                        content: `Error fetching anime: ${error.message}`,
-                        ephemeral: true // Only visible to the user who sent the command
-                    });
-                }
             }
         });
 
@@ -285,6 +259,7 @@ class AniListDiscordBot {
                     : 'No description available'
             )
             .addFields(
+                { name: 'Status', value: anime.status, inline: true},
                 { name: 'Episodes', value: anime.episodes.toString(), inline: true },
                 { name: 'Format', value: anime.format, inline: true },
                 { name: 'Year', value: anime.year?.toString() || 'Unknown', inline: true },
