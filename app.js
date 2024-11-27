@@ -46,7 +46,7 @@ class AniListDiscordBot {
                 }
             });
         });
-        
+
         this.client.on('error', (error) => {
             logger.error('Discord client error', { error });
         });
@@ -175,26 +175,31 @@ class AniListDiscordBot {
 
             const randomAnime = allEntries[Math.floor(Math.random() * allEntries.length)];
 
-            return {
-                title: randomAnime.media.title.english || randomAnime.media.title.romaji,
-                episodes: randomAnime.media.episodes || 'Unknown',
-                format: randomAnime.media.format,
-                status: randomAnime.status,
-                userScore: randomAnime.score,
-                averageScore: randomAnime.media.averageScore,
-                genres: randomAnime.media.genres,
-                year: randomAnime.media.seasonYear,
-                description: randomAnime.media.description,
-                coverImage: randomAnime.media.coverImage.extralarge
+           
+        return {
+            title: randomAnime.media.title.english || randomAnime.media.title.romaji,
+            episodes: randomAnime.media.episodes || 'Unknown',
+            format: randomAnime.media.format,
+            status: randomAnime.status,
+            userScore: randomAnime.score,
+            averageScore: randomAnime.media.averageScore,
+            genres: randomAnime.media.genres,
+            year: randomAnime.media.seasonYear,
+            description: randomAnime.media.description,
+            // Prefer extraLarge, but fallback to large, then remove any potentially malformed URLs
+            coverImage: randomAnime.media.coverImage.extraLarge || 
+                       randomAnime.media.coverImage.large || 
+                       null  // Add null fallback
             };
         } catch (error) {
-            console.error('Anime fetch failed:', error);
+            logger.error('Anime fetch failed:', error);
             throw error;
         }
     }
 
     createAnimeEmbed(anime) {
-        return new EmbedBuilder()
+        // Create embed with more robust image handling
+        const embedBuilder = new EmbedBuilder()
             .setColor('#0099ff')
             .setTitle(anime.title)
             .setDescription(
@@ -204,22 +209,37 @@ class AniListDiscordBot {
                         : anime.description)
                     : 'No description available'
             )
-            .setThumbnail(anime.coverImage)
             .addFields(
                 { name: 'Episodes', value: anime.episodes.toString(), inline: true },
                 { name: 'Format', value: anime.format, inline: true },
                 { name: 'Year', value: anime.year?.toString() || 'Unknown', inline: true },
-                { name: 'Genres', value: anime.genres.join(', '), inline: false },
+                { name: 'Genres', value: anime.genres.join(', ') || 'No genres', inline: false },
                 { name: 'Your Score', value: anime.userScore?.toString() || 'Not rated', inline: true },
                 { name: 'Average Score', value: `${anime.averageScore || 'N/A'}%`, inline: true }
             );
+    
+        // Add thumbnail only if a valid image URL exists
+        if (anime.coverImage && isValidHttpUrl(anime.coverImage)) {
+            embedBuilder.setImage(anime.coverImage);
+        }
+    
+        return embedBuilder;
     }
-}
+}    
 
 // Usage
+function isValidHttpUrl(string) {
+    let url;
+    try {
+        url = new URL(string);
+        return url.protocol === "http:" || url.protocol === "https:";
+    } catch (_) {
+        return false;  
+    }
+}
 function initializeBot() {
     // Replace with your actual Discord bot token
-    const DISCORD_BOT_TOKEN = 'YOUR_DISCORD_BOT_TOKEN';
+    const DISCORD_BOT_TOKEN = 'dis_token';
     const bot = new AniListDiscordBot(DISCORD_BOT_TOKEN);
 }
 
