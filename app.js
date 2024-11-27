@@ -31,57 +31,79 @@ class AniListDiscordBot {
     }
 
     async handleRandomAnimeCommand(interaction) {
-        // Immediately defer the reply to give more processing time
+    try {
+        // Immediately defer the reply to prevent timeout
         await interaction.deferReply({ ephemeral: false });
 
-        try {
-            const username = interaction.options.getString('username');
-            
-            // Validate username immediately
-            if (!username) {
-                await interaction.editReply({
-                    content: "Please provide a valid AniList username.",
-                    ephemeral: true
-                });
-                return;
-            }
+        const username = interaction.options.getString('username');
+        
+        // Early validation with quick response
+        if (!username) {
+            await interaction.editReply({
+                content: "❌ Please provide a valid AniList username.",
+                ephemeral: true
+            });
+            return;
+        }
 
-            // Catch potential errors early
+        try {
             const accessToken = await this.getAccessToken();
             const randomAnime = await this.fetchRandomAnime(accessToken, username);
             
             const embed = this.createAnimeEmbed(randomAnime);
             
-            // Use editReply instead of reply
             await interaction.editReply({ 
                 embeds: [embed],
-                ephemeral: false  // Make it visible to everyone
+                ephemeral: false
             });
 
-        } catch (error) {
+        } catch (fetchError) {
             logger.error('Anime command processing error', { 
                 username, 
-                errorMessage: error.message 
+                errorMessage: fetchError.message,
+                errorStack: fetchError.stack
             });
 
-            // Ensure we always send a response
-            try {
-                await interaction.editReply({
-                    content: `Sorry, I couldn't fetch an anime for ${username}. 
-                    Possible reasons:
-                    - Invalid username
-                    - Empty anime list
-                    - AniList API issues`,
+            // Guaranteed response to prevent "thinking" state
+            await interaction.editReply({
+                content: `❌ Error fetching anime for ${username}. Possible reasons:
+- Invalid AniList username
+- Empty anime list
+- AniList API temporarily unavailable
+- Network connectivity issues`,
+                ephemeral: true
+            });
+        }
+
+    } catch (globalError) {
+        // Last-resort error handling
+        logger.error('Critical error in anime command', {
+            errorMessage: globalError.message,
+            errorStack: globalError.stack
+        });
+
+        try {
+            // Final attempt to respond to interaction
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({
+                    content: "❌ An unexpected error occurred. Please try again later.",
                     ephemeral: true
                 });
-            } catch (replyError) {
-                logger.error('Failed to send error reply', { 
-                    originalError: error,
-                    replyError 
+            } else if (interaction.deferred) {
+                await interaction.editReply({
+                    content: "❌ An unexpected error occurred. Please try again later.",
+                    ephemeral: true
                 });
             }
+        } catch (replyError) {
+            // If all else fails, log the error
+            logger.error('Failed to send final error message', {
+                originalError: globalError,
+                replyError
+            });
         }
     }
+}
 
     setupEventListeners() {
         // Bot is ready - register slash commands
