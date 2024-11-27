@@ -1,10 +1,13 @@
 const { Client, GatewayIntentBits, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
 
+// Env Files
 require('dotenv').config();
 const dis_token = process.env.DISCORD_TOKEN;
 const ani_secret = process.env.CLIENT_SECRET;
 const ani_id = process.env.CLIENT_ID;
+
+const logger = require('./logger');  // Import the new logger
 
 class AniListDiscordBot {
     constructor(token) {
@@ -15,6 +18,7 @@ class AniListDiscordBot {
                 GatewayIntentBits.GuildMessages
             ]
         });
+        logger.info('AniListDiscordBot initialized');
 
         // AniList API credentials
         this.CLIENT_ID = ani_id;
@@ -29,19 +33,24 @@ class AniListDiscordBot {
     setupEventListeners() {
         // Bot is ready - register slash commands
         this.client.once('ready', async () => {
-            console.log(`Logged in as ${this.client.user.tag}`);
+            logger.info(`Logged in as ${this.client.user.tag}`);
             
             // Get all guilds the bot is in and register commands
             const guilds = this.client.guilds.cache;
             guilds.forEach(async (guild) => {
                 try {
                     await this.registerSlashCommands(guild);
+                    logger.info(`Registered commands for guild ${guild.id}`);
                 } catch (error) {
-                    console.error(`Failed to register commands for guild ${guild.id}:`, error);
+                    logger.error(`Failed to register commands for guild ${guild.id}:`, error);
                 }
             });
         });
-
+        
+        this.client.on('error', (error) => {
+            logger.error('Discord client error', { error });
+        });
+        
         // Interaction create event (handles slash commands)
         this.client.on('interactionCreate', async (interaction) => {
             if (!interaction.isChatInputCommand()) return;

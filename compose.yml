@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  discord-bot:
+    build: .
+    container_name: anilist-discord-bot
+    restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=$DISCORD_TOKEN
+      - CLIENT_ID=$CLIENT_ID
+      - CLIENT_SECRET=$CLIENT_SECRET
+    volumes:
+      - ./logs:/usr/src/app/logs
+    env_file: .env   
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
