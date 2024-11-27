@@ -30,6 +30,59 @@ class AniListDiscordBot {
         this.setupEventListeners();
     }
 
+    async handleRandomAnimeCommand(interaction) {
+        // Immediately defer the reply to give more processing time
+        await interaction.deferReply({ ephemeral: true });
+
+        try {
+            const username = interaction.options.getString('username');
+            
+            // Validate username immediately
+            if (!username) {
+                await interaction.editReply({
+                    content: "Please provide a valid AniList username.",
+                    ephemeral: true
+                });
+                return;
+            }
+
+            // Catch potential errors early
+            const accessToken = await this.getAccessToken();
+            const randomAnime = await this.fetchRandomAnime(accessToken, username);
+            
+            const embed = this.createAnimeEmbed(randomAnime);
+            
+            // Use editReply instead of reply
+            await interaction.editReply({ 
+                embeds: [embed],
+                ephemeral: false  // Make it visible to everyone
+            });
+
+        } catch (error) {
+            logger.error('Anime command processing error', { 
+                username, 
+                errorMessage: error.message 
+            });
+
+            // Ensure we always send a response
+            try {
+                await interaction.editReply({
+                    content: `Sorry, I couldn't fetch an anime for ${username}. 
+                    Possible reasons:
+                    - Invalid username
+                    - Empty anime list
+                    - AniList API issues`,
+                    ephemeral: true
+                });
+            } catch (replyError) {
+                logger.error('Failed to send error reply', { 
+                    originalError: error,
+                    replyError 
+                });
+            }
+        }
+    }
+
     setupEventListeners() {
         // Bot is ready - register slash commands
         this.client.once('ready', async () => {
@@ -51,6 +104,14 @@ class AniListDiscordBot {
             logger.error('Discord client error', { error });
         });
         
+        this.client.on('interactionCreate', async (interaction) => {
+            if (!interaction.isChatInputCommand()) return;
+
+            if (interaction.commandName === 'randomanime') {
+                await this.handleRandomAnimeCommand(interaction);
+            }
+        });
+
         // Interaction create event (handles slash commands)
         this.client.on('interactionCreate', async (interaction) => {
             if (!interaction.isChatInputCommand()) return;
@@ -121,8 +182,14 @@ class AniListDiscordBot {
     }
 
     async fetchRandomAnime(accessToken, username) {
+         // Normalize the username to lowercase
+        const normalizedUsername = username.toLowerCase();
+
         const query = `
         query ($username: String) {
+            User(name: $username) {
+                id  # Validate user exists first
+            }
             MediaListCollection(userName: $username, type: ANIME) {
                 lists {
                     entries {
@@ -166,6 +233,10 @@ class AniListDiscordBot {
                 }
             );
 
+            if (!response.data.data.User) {
+                throw new Error(`User ${username} not found on AniList`);
+            }
+
             const allEntries = response.data.data.MediaListCollection.lists
                 .flatMap(list => list.entries);
 
@@ -192,7 +263,11 @@ class AniListDiscordBot {
                        null  // Add null fallback
             };
         } catch (error) {
-            logger.error('Anime fetch failed:', error);
+            logger.error('Anime fetch failed', { 
+                username, 
+                errorMessage: error.message, 
+                errorStack: error.stack 
+            });
             throw error;
         }
     }
