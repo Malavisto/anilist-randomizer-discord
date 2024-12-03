@@ -1,7 +1,8 @@
-version: '3.8'
+---
 services:
   discord-bot:
-    build: .
+    image: ghcr.io/malavisto/anilist-randomizer-discord:main
+#    build: .  #Uncomment to build image locally instead
     container_name: anilist-discord-bot
     restart: unless-stopped
     environment:
