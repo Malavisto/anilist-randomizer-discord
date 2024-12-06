@@ -1,6 +1,6 @@
 const axios = require('axios');
 const { EmbedBuilder } = require('discord.js');
-const logger = require('./logger');
+const logger = require('../logger');
 
 class AnimeStatsService {
     constructor(getAccessTokenFn) {

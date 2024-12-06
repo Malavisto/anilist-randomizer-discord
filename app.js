@@ -2,9 +2,9 @@ const { Client, GatewayIntentBits, SlashCommandBuilder } = require('discord.js')
 const axios = require('axios');
 
 // Import modular services
-const AnimeRecommendationService = require('./animeRecommendation');
-const RandomAnimeService = require('./RandomAnimeService');
-const AnimeStatsService = require('./AnimeStatsService');
+const AnimeRecommendationService = require('./modules/animeRecommendation');
+const RandomAnimeService = require('./modules/RandomAnimeService');
+const AnimeStatsService = require('./modules/AnimeStatsService');
 
 const logger = require('./logger');  
 require('dotenv').config();
