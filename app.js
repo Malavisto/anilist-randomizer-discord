@@ -1,6 +1,10 @@
 const { Client, GatewayIntentBits, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
 
+// Anime Recommendations Module
+const AnimeRecommendationService = require('./animeRecommendation');
+
+
 // Env Files
 require('dotenv').config();
 const dis_token = process.env.DISCORD_TOKEN;
@@ -28,7 +32,10 @@ class AniListDiscordBot {
         this.TOKEN = dis_token;
 
         this.setupEventListeners();
+        // Create recommendation service and pass access token method
+        this.recommendationService = new AnimeRecommendationService(() => this.getAccessToken());
     }
+
 
 
     
@@ -136,10 +143,13 @@ class AniListDiscordBot {
                 await this.handleRandomAnimeCommand(interaction);
             } else if (interaction.commandName === 'animestats') {
                 await this.handleAnimeStatsCommand(interaction);
+            } else if (interaction.commandName === 'animerecommend') {
+                await this.recommendationService.handleAnimeRecommendCommand(interaction);
             }
         });
         // Login to Discord
         this.client.login(this.TOKEN);
+        
     }
 
     async registerSlashCommands(guild) {
@@ -161,15 +171,27 @@ class AniListDiscordBot {
                     .setDescription('AniList username to fetch stats from')
                     .setRequired(true)
         );
+        // Anime recommendation command
+        const animeRecommendCommand = new SlashCommandBuilder()
+            .setName('animerecommend')
+            .setDescription('Get an anime recommendation based on your list')
+            .addStringOption(option => 
+                option.setName('username')
+                    .setDescription('AniList username to generate recommendation from')
+                    .setRequired(true)
+            );
+
 
         try {
             // Register both commands for the specific guild
             await guild.commands.create(randomAnimeCommand.toJSON());
             await guild.commands.create(animeStatsCommand.toJSON());
+            await guild.commands.create(animeRecommendCommand.toJSON());
             console.log(`Registered slash commands for guild ${guild.id}`);
         } catch (error) {
             console.error(`Failed to register slash commands for guild ${guild.id}:`, error);
         }
+    
     }
 
     // The rest of the methods (getAccessToken, fetchRandomAnime, createAnimeEmbed) 
@@ -554,10 +576,10 @@ class AniListDiscordBot {
                 // Guaranteed response to prevent "thinking" state
                 await interaction.editReply({
                     content: `❌ Error fetching anime stats for ${username}. Possible reasons:
-        - Invalid AniList username
-        - Empty anime list
-        - AniList API temporarily unavailable
-        - Network connectivity issues`,
+            - Invalid AniList username
+            - Empty anime list
+            - AniList API temporarily unavailable
+            - Network connectivity issues`,
                     ephemeral: true
                 });
             }
