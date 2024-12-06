@@ -7,6 +7,7 @@ const RandomAnimeService = require('./modules/RandomAnimeService');
 const AnimeStatsService = require('./modules/AnimeStatsService');
 
 const logger = require('./logger');  
+
 require('dotenv').config();
 
 const dis_token = process.env.DISCORD_TOKEN;
@@ -64,7 +65,7 @@ class AniListDiscordBot {
         // Interaction create event (handles slash commands)
         this.client.on('interactionCreate', async (interaction) => {
             if (!interaction.isChatInputCommand()) return;
-        
+
             switch(interaction.commandName) {
                 case 'randomanime':
                     await this.randomAnimeService.handleRandomAnimeCommand(interaction);
@@ -77,9 +78,9 @@ class AniListDiscordBot {
                     break;
             }
         });
-
         // Login to Discord
         this.client.login(this.TOKEN);
+        
     }
 
     async registerSlashCommands(guild) {
@@ -92,6 +93,25 @@ class AniListDiscordBot {
                     .setDescription('AniList username to fetch anime from')
                     .setRequired(true)
             );
+        // Anime stats command
+        const animeStatsCommand = new SlashCommandBuilder()
+            .setName('animestats')
+            .setDescription('Get anime stats for an AniList user')
+            .addStringOption(option => 
+                option.setName('username')
+                    .setDescription('AniList username to fetch stats from')
+                    .setRequired(true)
+        );
+        // Anime recommendation command
+        const animeRecommendCommand = new SlashCommandBuilder()
+            .setName('animerecommend')
+            .setDescription('Get an anime recommendation based on your list')
+            .addStringOption(option => 
+                option.setName('username')
+                    .setDescription('AniList username to generate recommendation from')
+                    .setRequired(true)
+            );
+
 
         // Anime stats command
         const animeStatsCommand = new SlashCommandBuilder()
@@ -114,6 +134,7 @@ class AniListDiscordBot {
             );
 
         try {
+
             // Register commands for the specific guild
             await guild.commands.create(randomAnimeCommand.toJSON());
             await guild.commands.create(animeStatsCommand.toJSON());
@@ -122,6 +143,7 @@ class AniListDiscordBot {
         } catch (error) {
             console.error(`Failed to register slash commands for guild ${guild.id}:`, error);
         }
+    
     }
 
     async getAccessToken() {
