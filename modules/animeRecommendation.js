@@ -121,8 +121,9 @@ class AnimeRecommendationService {
                 throw new Error('No unique recommendations found');
             }
 
-            // Select the first recommendation
-            const recommendedAnime = uniqueRecommendations[0];
+            // Select a random recommendation from the available range
+            const randomIndex = Math.floor(Math.random() * uniqueRecommendations.length);
+            const recommendedAnime = uniqueRecommendations[randomIndex];
 
             return {
                 id: recommendedAnime.id,
