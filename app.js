@@ -1,10 +1,13 @@
 const { Client, GatewayIntentBits, SlashCommandBuilder } = require('discord.js');
 const axios = require('axios');
+const express = require('express');
+const client = require('prom-client');
 
 // Import modular services
 const AnimeRecommendationService = require('./modules/animeRecommendation');
 const RandomAnimeService = require('./modules/RandomAnimeService');
 const AnimeStatsService = require('./modules/AnimeStatsService');
+const metricsService = require('./metrics');
 
 const logger = require('./logger');  
 require('dotenv').config();
@@ -36,7 +39,33 @@ class AniListDiscordBot {
         this.randomAnimeService = new RandomAnimeService(() => this.getAccessToken());
         this.animeStatsService = new AnimeStatsService(() => this.getAccessToken());
 
+
+        this.setupMetricsServer();
+
         this.setupEventListeners();
+    }
+
+    setupMetricsServer() {
+        const app = express();
+        const PORT = process.env.METRICS_PORT || 9090;
+
+        // Prometheus metrics endpoint
+        app.get('/metrics', async (req, res) => {
+            try {
+                const metrics = await metricsService.getMetrics();
+                res.set('Content-Type', client.register.contentType);
+                res.send(metrics);
+            } catch (error) {
+                logger.error('Failed to retrieve metrics', { 
+                    error: error.message, 
+                    stack: error.stack 
+                });
+                res.status(500).send('Failed to retrieve metrics');
+            }
+        });
+        app.listen(PORT, () => {
+            logger.info(`Metrics server running on port ${PORT}`);
+        });
     }
 
     setupEventListeners() {
@@ -65,19 +94,28 @@ class AniListDiscordBot {
         this.client.on('interactionCreate', async (interaction) => {
             if (!interaction.isChatInputCommand()) return;
         
-            switch(interaction.commandName) {
-                case 'randomanime':
-                    await this.randomAnimeService.handleRandomAnimeCommand(interaction);
-                    break;
-                case 'animestats':
-                    await this.animeStatsService.handleAnimeStatsCommand(interaction);
-                    break;
-                case 'animerecommend':
-                    await this.recommendationService.handleAnimeRecommendCommand(interaction);
-                    break;
+            let endTimer;
+            try {
+                switch(interaction.commandName) {
+                    case 'randomanime':
+                        endTimer = metricsService.trackCommand('random_anime');
+                        await this.randomAnimeService.handleRandomAnimeCommand(interaction);
+                        break;
+                    case 'animestats':
+                        endTimer = metricsService.trackCommand('anime_stats');
+                        await this.animeStatsService.handleAnimeStatsCommand(interaction);
+                        break;
+                    case 'animerecommend':
+                        endTimer = metricsService.trackCommand('anime_recommend');
+                        await this.recommendationService.handleAnimeRecommendCommand(interaction);
+                        break;
+                }
+                endTimer(); // Stop the timer
+            } catch (error) {
+                if (endTimer) endTimer(); // Ensure timer is stopped
+                throw error;
             }
         });
-
         // Login to Discord
         this.client.login(this.TOKEN);
     }
@@ -125,6 +163,7 @@ class AniListDiscordBot {
     }
 
     async getAccessToken() {
+        const startTime = Date.now();
         try {
             const response = await axios.post('https://anilist.co/api/v2/oauth/token', {
                 grant_type: 'client_credentials',
@@ -132,8 +171,10 @@ class AniListDiscordBot {
                 client_secret: this.CLIENT_SECRET
             });
             
+            metricsService.trackApiRequest('/oauth/token', 'success');
             return response.data.access_token;
         } catch (error) {
+            metricsService.trackApiRequest('/oauth/token', 'failure');
             console.error('Access token retrieval failed:', error);
             throw error;
         }

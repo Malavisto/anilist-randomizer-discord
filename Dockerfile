@@ -11,7 +11,7 @@ RUN apk add --no-cache tzdata
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
 # Copy the rest of the application code
 COPY . .
@@ -21,6 +21,9 @@ USER node
 
 # Add logging volume
 VOLUME ["/usr/src/app/logs"]
+
+# Expose metrics port
+EXPOSE 9090
 
 # Command to run the bot
 CMD ["npm", "start"]
