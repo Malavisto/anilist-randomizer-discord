@@ -17,7 +17,7 @@ services:
       - ./logs:/usr/src/app/logs
     env_file: .env   
     ports:
-      - 9093:9093
+      - 9090:9090
     logging:
       driver: "json-file"
       options:
