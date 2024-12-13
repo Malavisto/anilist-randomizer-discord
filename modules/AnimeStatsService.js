@@ -39,8 +39,8 @@ class CacheService {
 
 // Main Logic
 class AnimeStatsService {
-    constructor(getAccessTokenFn) {
-        this.getAccessToken = getAccessTokenFn;
+    constructor() {
+        // Remove the accessTokenFn parameter
         this.cache = new CacheService();
     }
 
@@ -53,7 +53,6 @@ class AnimeStatsService {
         }
 
         try {
-            const accessToken = await this.getAccessToken();
             const query = `
             query ($username: String) {
                 User(name: $username) {
@@ -81,7 +80,6 @@ class AnimeStatsService {
                 },
                 {
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     }

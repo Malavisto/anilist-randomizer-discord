@@ -166,33 +166,6 @@ class AniListDiscordBot {
         }
     }
 
-    async getAccessToken() {
-        const currentTime = Date.now();
-        
-        // Check if we have a valid cached token
-        if (this.accessToken && currentTime < this.tokenExpiresAt) {
-            return this.accessToken;
-        }
-
-        try {
-            const response = await axios.post('https://anilist.co/api/v2/oauth/token', {
-                grant_type: 'client_credentials',
-                client_id: this.CLIENT_ID,
-                client_secret: this.CLIENT_SECRET
-            });
-            
-            // Cache the token and set expiration (AniList tokens typically last an hour)
-            this.accessToken = response.data.access_token;
-            this.tokenExpiresAt = currentTime + (60 * 60 * 1000); // 1 hour from now
-            
-            metricsService.trackApiRequest('/oauth/token', 'success');
-            return this.accessToken;
-        } catch (error) {
-            metricsService.trackApiRequest('/oauth/token', 'failure');
-            logger.error('Access token retrieval failed', { error });
-            throw error;
-        }
-    }
 }
 // Usage
 function initializeBot() {

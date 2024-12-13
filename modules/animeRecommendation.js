@@ -39,8 +39,8 @@ class CacheService {
 
 // Main Logic
 class AnimeRecommendationService {
-    constructor(accessTokenFn) {
-        this.getAccessToken = accessTokenFn;
+    constructor() {
+        // Remove the accessTokenFn parameter
         this.cache = new CacheService();
     }
 
@@ -54,7 +54,6 @@ class AnimeRecommendationService {
                 return cachedRecommendation;
             }
 
-            const accessToken = await this.getAccessToken();
             const query = `
             query ($username: String) {
                 MediaListCollection(userName: $username, type: ANIME) {
@@ -85,7 +84,6 @@ class AnimeRecommendationService {
                 },
                 {
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     }
@@ -149,7 +147,6 @@ class AnimeRecommendationService {
                 },
                 {
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     }

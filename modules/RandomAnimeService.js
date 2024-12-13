@@ -39,13 +39,14 @@ class CacheService {
 
 // Main Logic
 class RandomAnimeService {
-    constructor(getAccessTokenFn) {
-        this.getAccessToken = getAccessTokenFn;
+    constructor() {
+        // Remove the accessTokenFn parameter
+        this.cache = new CacheService();
     }
+
 
     async fetchRandomAnime(username) {
         try {
-            const accessToken = await this.getAccessToken();
 
             const query = `
             query ($username: String) {
@@ -88,7 +89,6 @@ class RandomAnimeService {
                 },
                 {
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     }
