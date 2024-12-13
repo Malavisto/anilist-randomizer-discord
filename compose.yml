@@ -12,12 +12,12 @@ services:
       - DISCORD_TOKEN=$DISCORD_TOKEN
       - CLIENT_ID=$CLIENT_ID
       - CLIENT_SECRET=$CLIENT_SECRET
-      - METRICS_PORT=9093      
+      - METRICS_PORT=9090      
     volumes:
       - ./logs:/usr/src/app/logs
     env_file: .env   
-    ports:
-      - 9090:9090
+#    ports:     # Uncomment if prometheus is hosted externaly
+#      - 9090:9090
     logging:
       driver: "json-file"
       options:

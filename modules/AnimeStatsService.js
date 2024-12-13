@@ -1,13 +1,57 @@
 const axios = require('axios');
 const { EmbedBuilder } = require('discord.js');
 const logger = require('../logger');
+const metricsService = require('../metrics');
 
+// Caching Service
+class CacheService {
+    constructor(ttl = 300000) { // 5 minutes default TTL
+        this.cache = new Map();
+        this.ttl = ttl;
+    }
+
+    set(key, value) {
+        const entry = {
+            value,
+            timestamp: Date.now()
+        };
+        this.cache.set(key, entry);
+        return value;
+    }
+
+    get(key) {
+        const entry = this.cache.get(key);
+        if (!entry) return null;
+
+        // Check if entry is expired
+        if (Date.now() - entry.timestamp > this.ttl) {
+            this.cache.delete(key);
+            return null;
+        }
+
+        return entry.value;
+    }
+
+    clear(key) {
+        this.cache.delete(key);
+    }
+}
+
+// Main Logic
 class AnimeStatsService {
     constructor(getAccessTokenFn) {
         this.getAccessToken = getAccessTokenFn;
+        this.cache = new CacheService();
     }
 
     async fetchUserAnimeStats(username) {
+        // Check cache first
+        const cachedStats = this.cache.get(`stats_${username}`);
+        if (cachedStats) {
+            metricsService.trackCacheHit('anime_stats');
+            return cachedStats;
+        }
+
         try {
             const accessToken = await this.getAccessToken();
             const query = `
@@ -83,8 +127,11 @@ class AnimeStatsService {
                 stats.averageScore = (validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(2);
             }
     
-            return stats;
+            // Cache the result
+            return this.cache.set(`stats_${username}`, stats);
+            
         } catch (error) {
+            metricsService.trackError('fetch_failure', 'anime_stats');
             logger.error('Anime stats fetch failed', { 
                 username, 
                 errorMessage: error.message, 

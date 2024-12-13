@@ -1,14 +1,59 @@
 const axios = require('axios');
 const { EmbedBuilder } = require('discord.js');
 const logger = require('../logger');
+const metricsService = require('../metrics');
 
+// Caching Service
+class CacheService {
+    constructor(ttl = 300000) { // 5 minutes default TTL
+        this.cache = new Map();
+        this.ttl = ttl;
+    }
+
+    set(key, value) {
+        const entry = {
+            value,
+            timestamp: Date.now()
+        };
+        this.cache.set(key, entry);
+        return value;
+    }
+
+    get(key) {
+        const entry = this.cache.get(key);
+        if (!entry) return null;
+
+        // Check if entry is expired
+        if (Date.now() - entry.timestamp > this.ttl) {
+            this.cache.delete(key);
+            return null;
+        }
+
+        return entry.value;
+    }
+
+    clear(key) {
+        this.cache.delete(key);
+    }
+}
+
+// Main Logic
 class AnimeRecommendationService {
     constructor(accessTokenFn) {
         this.getAccessToken = accessTokenFn;
+        this.cache = new CacheService();
     }
 
     async fetchAnimeRecommendation(username) {
         try {
+
+            // Existing cache check
+            const cachedRecommendation = this.cache.get(`recommendation_${username}`);
+            if (cachedRecommendation) {
+                metricsService.trackCacheHit('anime_recommendation');
+                return cachedRecommendation;
+            }
+
             const accessToken = await this.getAccessToken();
             const query = `
             query ($username: String) {
@@ -63,8 +108,9 @@ class AnimeRecommendationService {
 
             // Use genres from highest-rated anime to find similar recommendations
             const genresOfInterest = highestRatedEntries
-                .flatMap(entry => entry.media.genres)
-                .filter((genre, index, self) => self.indexOf(genre) === index);
+            .flatMap(entry => entry.media.genres)
+            .filter((genre, index, self) => self.indexOf(genre) === index)
+            .slice(0, 3); // Limit to top 3 genres
 
             // Second query to find recommendations based on genres
             const recommendationQuery = `
@@ -115,7 +161,7 @@ class AnimeRecommendationService {
             // Filter out anime that are already in the user's list
             const uniqueRecommendations = recommendedAnimes.filter(
                 recommended => !allEntries.some(entry => entry.media.id === recommended.id)
-            );
+            ).slice(0, 5); // Limit to 5 unique recommendations
 
             if (uniqueRecommendations.length === 0) {
                 throw new Error('No unique recommendations found');
@@ -142,6 +188,7 @@ class AnimeRecommendationService {
             };
 
         } catch (error) {
+            metricsService.trackError('recommendation_failure', 'anime_recommend');
             logger.error('Anime recommendation fetch failed', { 
                 username, 
                 errorMessage: error.message, 

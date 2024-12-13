@@ -16,6 +16,7 @@ const dis_token = process.env.DISCORD_TOKEN;
 const ani_secret = process.env.CLIENT_SECRET;
 const ani_id = process.env.CLIENT_ID;
 
+// Main Bot Logic
 class AniListDiscordBot {
     constructor(token) {
         // Discord bot configuration with required intents
@@ -43,6 +44,9 @@ class AniListDiscordBot {
         this.setupMetricsServer();
 
         this.setupEventListeners();
+
+        this.accessToken = null;
+        this.tokenExpiresAt = 0;
     }
 
     setupMetricsServer() {
@@ -163,7 +167,13 @@ class AniListDiscordBot {
     }
 
     async getAccessToken() {
-        const startTime = Date.now();
+        const currentTime = Date.now();
+        
+        // Check if we have a valid cached token
+        if (this.accessToken && currentTime < this.tokenExpiresAt) {
+            return this.accessToken;
+        }
+
         try {
             const response = await axios.post('https://anilist.co/api/v2/oauth/token', {
                 grant_type: 'client_credentials',
@@ -171,16 +181,19 @@ class AniListDiscordBot {
                 client_secret: this.CLIENT_SECRET
             });
             
+            // Cache the token and set expiration (AniList tokens typically last an hour)
+            this.accessToken = response.data.access_token;
+            this.tokenExpiresAt = currentTime + (60 * 60 * 1000); // 1 hour from now
+            
             metricsService.trackApiRequest('/oauth/token', 'success');
-            return response.data.access_token;
+            return this.accessToken;
         } catch (error) {
             metricsService.trackApiRequest('/oauth/token', 'failure');
-            console.error('Access token retrieval failed:', error);
+            logger.error('Access token retrieval failed', { error });
             throw error;
         }
     }
 }
-
 // Usage
 function initializeBot() {
     const bot = new AniListDiscordBot(dis_token);
