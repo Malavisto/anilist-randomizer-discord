@@ -7,23 +7,34 @@ services:
     networks:
       - services
     restart: unless-stopped
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     environment:
       - TZ=$TimeZone
       - DISCORD_TOKEN=$DISCORD_TOKEN
       - CLIENT_ID=$CLIENT_ID
       - CLIENT_SECRET=$CLIENT_SECRET
-      - METRICS_PORT=9093      
+      - METRICS_PORT=9090      
     volumes:
       - ./logs:/usr/src/app/logs
     env_file: .env   
-    ports:
-      - 9090:9090
+#    ports:     # Uncomment if prometheus is hosted externaly
+#      - 9090:9090
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
+watchtower:
+    image: containrrr/watchtower
+    environment:
+      - TZ=$TimeZone
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_LABEL_ENABLE=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30
 
 # Prometheus setup for new setups
 

@@ -16,6 +16,7 @@ const dis_token = process.env.DISCORD_TOKEN;
 const ani_secret = process.env.CLIENT_SECRET;
 const ani_id = process.env.CLIENT_ID;
 
+// Main Bot Logic
 class AniListDiscordBot {
     constructor(token) {
         // Discord bot configuration with required intents
@@ -35,14 +36,17 @@ class AniListDiscordBot {
         this.TOKEN = dis_token;
 
         // Initialize services
-        this.recommendationService = new AnimeRecommendationService(() => this.getAccessToken());
-        this.randomAnimeService = new RandomAnimeService(() => this.getAccessToken());
-        this.animeStatsService = new AnimeStatsService(() => this.getAccessToken());
+        this.recommendationService = new AnimeRecommendationService();
+        this.randomAnimeService = new RandomAnimeService();
+        this.animeStatsService = new AnimeStatsService();
 
 
         this.setupMetricsServer();
 
         this.setupEventListeners();
+
+        this.accessToken = null;
+        this.tokenExpiresAt = 0;
     }
 
     setupMetricsServer() {
@@ -162,25 +166,7 @@ class AniListDiscordBot {
         }
     }
 
-    async getAccessToken() {
-        const startTime = Date.now();
-        try {
-            const response = await axios.post('https://anilist.co/api/v2/oauth/token', {
-                grant_type: 'client_credentials',
-                client_id: this.CLIENT_ID,
-                client_secret: this.CLIENT_SECRET
-            });
-            
-            metricsService.trackApiRequest('/oauth/token', 'success');
-            return response.data.access_token;
-        } catch (error) {
-            metricsService.trackApiRequest('/oauth/token', 'failure');
-            console.error('Access token retrieval failed:', error);
-            throw error;
-        }
-    }
 }
-
 // Usage
 function initializeBot() {
     const bot = new AniListDiscordBot(dis_token);

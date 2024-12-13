@@ -1,16 +1,53 @@
 const axios = require('axios');
 const { EmbedBuilder } = require('discord.js');
 const logger = require('../logger');
+const metricsService = require('../metrics');
 
-class RandomAnimeService {
-    constructor(getAccessTokenFn) {
-        this.getAccessToken = getAccessTokenFn;
+// Caching Service
+class CacheService {
+    constructor(ttl = 300000) { // 5 minutes default TTL
+        this.cache = new Map();
+        this.ttl = ttl;
     }
+
+    set(key, value) {
+        const entry = {
+            value,
+            timestamp: Date.now()
+        };
+        this.cache.set(key, entry);
+        return value;
+    }
+
+    get(key) {
+        const entry = this.cache.get(key);
+        if (!entry) return null;
+
+        // Check if entry is expired
+        if (Date.now() - entry.timestamp > this.ttl) {
+            this.cache.delete(key);
+            return null;
+        }
+
+        return entry.value;
+    }
+
+    clear(key) {
+        this.cache.delete(key);
+    }
+}
+
+// Main Logic
+class RandomAnimeService {
+    constructor() {
+        // Remove the accessTokenFn parameter
+        this.cache = new CacheService();
+    }
+
 
     async fetchRandomAnime(username) {
         try {
-            const accessToken = await this.getAccessToken();
-
+            metricsService.trackApiRequest('random_anime', 'started', username);
             const query = `
             query ($username: String) {
                 User(name: $username) {
@@ -52,12 +89,12 @@ class RandomAnimeService {
                 },
                 {
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     }
                 }
             );
+            metricsService.trackApiRequest('random_anime', 'success', username);
 
             if (!response.data.data.User) {
                 throw new Error(`User ${username} not found on AniList`);
@@ -239,6 +276,7 @@ class RandomAnimeService {
                     ephemeral: true
                 });
             }
+
     
         } catch (globalError) {
             // Last-resort error handling
@@ -246,6 +284,7 @@ class RandomAnimeService {
                 errorMessage: globalError.message,
                 errorStack: globalError.stack
             });
+            
     
             try {
                 // Final attempt to respond to interaction
@@ -259,16 +298,34 @@ class RandomAnimeService {
                         content: "❌ An unexpected error occurred. Please try again later.",
                         ephemeral: true
                     });
+                    
                 }
-            } catch (replyError) {
+
+
+            }
+            catch (replyError) {
                 // If all else fails, log the error
+                metricsService.trackError(globalError.name || 'unknown_error', 'random_anime');
+                metricsService.trackApiRequest('random_anime', 'failure', username);
                 logger.error('Failed to send final error message', {
                     originalError: globalError,
                     replyError
                 });
             }
-        }
+        } 
+        
     }
 }
 
+
 module.exports = RandomAnimeService;
+
+
+//        finally {
+//      if (endTimer) {
+//          endTimer(error ? 'failure' : 'success');
+//      }
+//  }
+//  
+
+// The above is for future me to impliment
