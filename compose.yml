@@ -32,6 +32,9 @@ services:
         - TZ=$TimeZone
         - WATCHTOWER_CLEANUP=true
         - WATCHTOWER_LABEL_ENABLE=true
+      restart: unless-stopped  
+      networks:
+        - services  
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
       command: --interval 30
