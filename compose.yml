@@ -26,15 +26,15 @@ services:
         max-size: "10m"
         max-file: "3"
 
-watchtower:
-    image: containrrr/watchtower
-    environment:
-      - TZ=$TimeZone
-      - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_LABEL_ENABLE=true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 30
+  watchtower:
+      image: containrrr/watchtower
+      environment:
+        - TZ=$TimeZone
+        - WATCHTOWER_CLEANUP=true
+        - WATCHTOWER_LABEL_ENABLE=true
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+      command: --interval 30
 
 # Prometheus setup for new setups
 
