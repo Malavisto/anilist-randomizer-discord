@@ -36,9 +36,9 @@ class AniListDiscordBot {
         this.TOKEN = dis_token;
 
         // Initialize services
-        this.recommendationService = new AnimeRecommendationService(() => this.getAccessToken());
-        this.randomAnimeService = new RandomAnimeService(() => this.getAccessToken());
-        this.animeStatsService = new AnimeStatsService(() => this.getAccessToken());
+        this.recommendationService = new AnimeRecommendationService();
+        this.randomAnimeService = new RandomAnimeService();
+        this.animeStatsService = new AnimeStatsService();
 
 
         this.setupMetricsServer();

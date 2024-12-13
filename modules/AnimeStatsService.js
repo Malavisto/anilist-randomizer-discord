@@ -45,14 +45,16 @@ class AnimeStatsService {
     }
 
     async fetchUserAnimeStats(username) {
+        try {
+            metricsService.trackApiRequest('anime_stats', 'started', username);
+
         // Check cache first
         const cachedStats = this.cache.get(`stats_${username}`);
         if (cachedStats) {
             metricsService.trackCacheHit('anime_stats');
+            metricsService.trackApiRequest('anime_stats', 'cache_hit', username);
             return cachedStats;
         }
-
-        try {
             const query = `
             query ($username: String) {
                 User(name: $username) {
@@ -85,7 +87,7 @@ class AnimeStatsService {
                     }
                 }
             );
-    
+            metricsService.trackApiRequest('anime_stats', 'success', username);
             if (!response.data.data.User) {
                 throw new Error(`User ${username} not found on AniList`);
             }
@@ -130,6 +132,7 @@ class AnimeStatsService {
             
         } catch (error) {
             metricsService.trackError('fetch_failure', 'anime_stats');
+            metricsService.trackApiRequest('anime_stats', 'failure', username);
             logger.error('Anime stats fetch failed', { 
                 username, 
                 errorMessage: error.message, 

@@ -47,7 +47,7 @@ class RandomAnimeService {
 
     async fetchRandomAnime(username) {
         try {
-
+            metricsService.trackApiRequest('random_anime', 'started', username);
             const query = `
             query ($username: String) {
                 User(name: $username) {
@@ -94,6 +94,7 @@ class RandomAnimeService {
                     }
                 }
             );
+            metricsService.trackApiRequest('random_anime', 'success', username);
 
             if (!response.data.data.User) {
                 throw new Error(`User ${username} not found on AniList`);
@@ -305,6 +306,7 @@ class RandomAnimeService {
             catch (replyError) {
                 // If all else fails, log the error
                 metricsService.trackError(globalError.name || 'unknown_error', 'random_anime');
+                metricsService.trackApiRequest('random_anime', 'failure', username);
                 logger.error('Failed to send final error message', {
                     originalError: globalError,
                     replyError

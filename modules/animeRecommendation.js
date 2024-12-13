@@ -47,10 +47,13 @@ class AnimeRecommendationService {
     async fetchAnimeRecommendation(username) {
         try {
 
+            metricsService.trackApiRequest('recommendation', 'started', username);
+
             // Existing cache check
             const cachedRecommendation = this.cache.get(`recommendation_${username}`);
             if (cachedRecommendation) {
                 metricsService.trackCacheHit('anime_recommendation');
+                metricsService.trackApiRequest('recommendation', 'cache_hit', username);
                 return cachedRecommendation;
             }
 
@@ -75,6 +78,8 @@ class AnimeRecommendationService {
                 }
             }
             `;
+            // If successful, track successful API request
+            metricsService.trackApiRequest('recommendation', 'success', username);
 
             // Fetch user's media list
             const response = await axios.post('https://graphql.anilist.co', 
@@ -186,6 +191,7 @@ class AnimeRecommendationService {
 
         } catch (error) {
             metricsService.trackError('recommendation_failure', 'anime_recommend');
+            metricsService.trackApiRequest('recommendation', 'failure', username);
             logger.error('Anime recommendation fetch failed', { 
                 username, 
                 errorMessage: error.message, 
