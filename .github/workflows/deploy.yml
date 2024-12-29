@@ -1,0 +1,49 @@
+name: Deploy Discord Bot
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Notify Discord - Start
+      uses: sarisia/actions-status-discord@v1
+      with:
+        webhook: ${{ secrets.DISCORD_WEBHOOK }}
+        title: "🚀 Deployment Started"
+        description: "Starting deployment of new changes..."
+        color: 0x03fc90
+        
+    - name: Deploy using SSH
+      id: deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd ~/anilist-randomizer-discord
+          git pull
+          npm install --production
+          pm2 restart discord-bot
+
+    - name: Notify Discord - Success
+      if: success()
+      uses: sarisia/actions-status-discord@v1
+      with:
+        webhook: ${{ secrets.DISCORD_WEBHOOK }}
+        title: "✅ Deployment Successful"
+        description: "Bot has been updated and restarted successfully!"
+        color: 0x00ff00
+        
+    - name: Notify Discord - Failure
+      if: failure()
+      uses: sarisia/actions-status-discord@v1
+      with:
+        webhook: ${{ secrets.DISCORD_WEBHOOK }}
+        title: "❌ Deployment Failed"
+        description: "There was an error during deployment. Please check the GitHub Actions logs."
+        color: 0xff0000
