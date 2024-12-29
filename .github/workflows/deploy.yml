@@ -27,7 +27,7 @@ jobs:
         script: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-          cd ~/anilist-randomizer-discord
+          cd /opt/anilist-randomizer-discord
           git pull
           npm install --production
           pm2 restart discord-bot
