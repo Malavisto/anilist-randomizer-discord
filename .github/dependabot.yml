@@ -1,7 +1,7 @@
 version: 2
 updates:
-  # Configuration for npm
-  - package-ecosystem: "npm"
+  # Configuration for pnpm
+  - package-ecosystem: "pnpm"
     directory: "/"
     schedule:
       interval: "weekly"
