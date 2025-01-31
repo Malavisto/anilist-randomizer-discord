@@ -31,7 +31,7 @@ jobs:
           sudo systemctl stop anilist-discord
           git pull
           npm install --production
-          sudo systemctl stat anilist-discord
+          sudo systemctl start anilist-discord
     - name: Notify Discord - Success
       if: success()
       uses: sarisia/actions-status-discord@v1
