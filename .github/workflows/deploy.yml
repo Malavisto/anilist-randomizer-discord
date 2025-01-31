@@ -28,11 +28,10 @@ jobs:
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
           cd /opt/anilist-discord
-          systemctl stop anilist-discord
+          sudo systemctl stop anilist-discord
           git pull
           npm install --production
-          systemctl stat anilist-discord
-
+          sudo systemctl stat anilist-discord
     - name: Notify Discord - Success
       if: success()
       uses: sarisia/actions-status-discord@v1
