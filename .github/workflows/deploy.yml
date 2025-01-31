@@ -27,10 +27,11 @@ jobs:
         script: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-          cd /opt/anilist-randomizer-discord
+          cd /opt/anilist-discord
+          systemctl stop anilist-discord
           git pull
           npm install --production
-          pm2 restart discord-bot
+          systemctl stat anilist-discord
 
     - name: Notify Discord - Success
       if: success()
