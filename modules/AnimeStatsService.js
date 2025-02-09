@@ -48,13 +48,13 @@ class AnimeStatsService {
         try {
             metricsService.trackApiRequest('anime_stats', 'started', username);
 
-        // Check cache first
-        const cachedStats = this.cache.get(`stats_${username}`);
-        if (cachedStats) {
-            metricsService.trackCacheHit('anime_stats');
-            metricsService.trackApiRequest('anime_stats', 'cache_hit', username);
-            return cachedStats;
-        }
+            // Check cache first
+            const cachedStats = this.cache.get(`stats_${username}`);
+            if (cachedStats) {
+                metricsService.trackCacheHit('anime_stats');
+                metricsService.trackApiRequest('anime_stats', 'cache_hit', username);
+                return cachedStats;
+            }
             const query = `
             query ($username: String) {
                 User(name: $username) {
@@ -74,11 +74,11 @@ class AnimeStatsService {
                 }
             }
             `;
-    
-            const response = await axios.post('https://graphql.anilist.co', 
-                { 
-                    query, 
-                    variables: { username } 
+
+            const response = await axios.post('https://graphql.anilist.co',
+                {
+                    query,
+                    variables: { username }
                 },
                 {
                     headers: {
@@ -91,9 +91,9 @@ class AnimeStatsService {
             if (!response.data.data.User) {
                 throw new Error(`User ${username} not found on AniList`);
             }
-    
+
             const lists = response.data.data.MediaListCollection.lists;
-    
+
             // Define status categories
             const statusCategories = {
                 'Completed': lists.find(list => list.name === 'Completed')?.entries || [],
@@ -102,7 +102,7 @@ class AnimeStatsService {
                 'Dropped': lists.find(list => list.name === 'Dropped')?.entries || [],
                 'Planning': lists.find(list => list.name === 'Planning')?.entries || []
             };
-    
+
             // Calculate statistics
             const stats = {
                 totalAnime: 0,
@@ -113,30 +113,30 @@ class AnimeStatsService {
                 planningAnime: statusCategories['Planning'].length,
                 averageScore: 0
             };
-    
+
             // Collect all anime entries for scoring
             const allEntries = Object.values(statusCategories).flat();
             stats.totalAnime = allEntries.length;
-    
+
             // Calculate average score
             const validScores = allEntries
                 .map(entry => entry.media.averageScore)
                 .filter(score => score !== null);
-    
+
             if (validScores.length > 0) {
                 stats.averageScore = (validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(2);
             }
-    
+
             // Cache the result
             return this.cache.set(`stats_${username}`, stats);
-            
+
         } catch (error) {
             metricsService.trackError('fetch_failure', 'anime_stats');
             metricsService.trackApiRequest('anime_stats', 'failure', username);
-            logger.error('Anime stats fetch failed', { 
-                username, 
-                errorMessage: error.message, 
-                errorStack: error.stack 
+            logger.error('Anime stats fetch failed', {
+                username,
+                errorMessage: error.message,
+                errorStack: error.stack
             });
             throw error;
         }
@@ -147,46 +147,46 @@ class AnimeStatsService {
             .setColor('#0099ff')
             .setTitle(`📊 Anime Stats for ${username}`)
             .addFields(
-                { 
-                    name: '📈 Total Anime', 
-                    value: `🌟 ${stats.totalAnime}`, 
-                    inline: true 
+                {
+                    name: '📈 Total Anime',
+                    value: `🌟 ${stats.totalAnime}`,
+                    inline: true
                 },
-                { 
-                    name: '✅ Completed', 
-                    value: `🏆 ${stats.completedAnime}`, 
-                    inline: true 
+                {
+                    name: '✅ Completed',
+                    value: `🏆 ${stats.completedAnime}`,
+                    inline: true
                 },
-                { 
-                    name: '📺 Currently Watching', 
-                    value: `🔴 ${stats.watchingAnime}`, 
-                    inline: true 
+                {
+                    name: '📺 Currently Watching',
+                    value: `🔴 ${stats.watchingAnime}`,
+                    inline: true
                 },
-                { 
-                    name: '⏸️ Paused', 
-                    value: `⏳ ${stats.pausedAnime}`, 
-                    inline: true 
+                {
+                    name: '⏸️ Paused',
+                    value: `⏳ ${stats.pausedAnime}`,
+                    inline: true
                 },
-                { 
-                    name: '❌ Dropped', 
-                    value: `🗑️ ${stats.droppedAnime}`, 
-                    inline: true 
+                {
+                    name: '❌ Dropped',
+                    value: `🗑️ ${stats.droppedAnime}`,
+                    inline: true
                 },
-                { 
-                    name: '📅 Planning to Watch', 
-                    value: `📝 ${stats.planningAnime}`, 
-                    inline: true 
+                {
+                    name: '📅 Planning to Watch',
+                    value: `📝 ${stats.planningAnime}`,
+                    inline: true
                 },
-                { 
-                    name: '⭐ Average Score', 
-                    value: `🌈 ${stats.averageScore || 'N/A'}`, 
-                    inline: true 
+                {
+                    name: '⭐ Average Score',
+                    value: `🌈 ${stats.averageScore || 'N/A'}`,
+                    inline: true
                 }
             )
-            .setFooter({ 
-                text: 'Stats fetched from AniList' 
+            .setFooter({
+                text: 'Stats fetched from AniList'
             });
-    
+
         return embed;
     }
 
@@ -194,9 +194,9 @@ class AnimeStatsService {
         try {
             // Immediately defer the reply to prevent timeout
             await interaction.deferReply({ ephemeral: false });
-    
+
             const username = interaction.options.getString('username');
-            
+
             // Early validation with quick response
             if (!username) {
                 await interaction.editReply({
@@ -205,24 +205,24 @@ class AnimeStatsService {
                 });
                 return;
             }
-    
+
             try {
                 const stats = await this.fetchUserAnimeStats(username);
-                
+
                 const statsEmbed = this.createAnimeStatsEmbed(username, stats);
-                
-                await interaction.editReply({ 
+
+                await interaction.editReply({
                     embeds: [statsEmbed],
                     ephemeral: false
                 });
-    
+
             } catch (fetchError) {
-                logger.error('Anime stats command processing error', { 
-                    username, 
+                logger.error('Anime stats command processing error', {
+                    username,
                     errorMessage: fetchError.message,
                     errorStack: fetchError.stack
                 });
-    
+
                 // Guaranteed response to prevent "thinking" state
                 await interaction.editReply({
                     content: `❌ Error fetching anime stats for ${username}. Possible reasons:
@@ -233,14 +233,14 @@ class AnimeStatsService {
                     ephemeral: true
                 });
             }
-    
+
         } catch (globalError) {
             // Last-resort error handling
             logger.error('Critical error in anime stats command', {
                 errorMessage: globalError.message,
                 errorStack: globalError.stack
             });
-    
+
             try {
                 // Final attempt to respond to interaction
                 if (!interaction.replied && !interaction.deferred) {

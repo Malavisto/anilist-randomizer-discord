@@ -30,7 +30,7 @@ const logger = winston.createLogger({
                 winston.format.simple()
             )
         }),
-        
+
         // File transport for information logs
         new winston.transports.File({
             filename: path.join(LOG_DIR, 'info.log'),
@@ -38,7 +38,7 @@ const logger = winston.createLogger({
             maxsize: 5242880, // 5MB
             maxFiles: 5
         }),
-        
+
         // Separate file for error logs
         new winston.transports.File({
             filename: path.join(LOG_DIR, 'error.log'),

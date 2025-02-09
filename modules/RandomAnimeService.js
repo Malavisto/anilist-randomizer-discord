@@ -82,10 +82,10 @@ class RandomAnimeService {
             }
             `;
 
-            const response = await axios.post('https://graphql.anilist.co', 
-                { 
-                    query, 
-                    variables: { username } 
+            const response = await axios.post('https://graphql.anilist.co',
+                {
+                    query,
+                    variables: { username }
                 },
                 {
                     headers: {
@@ -108,7 +108,7 @@ class RandomAnimeService {
             }
 
             const randomAnime = allEntries[Math.floor(Math.random() * allEntries.length)];
-           
+
             return {
                 id: randomAnime.media.id,
                 title: randomAnime.media.title.english || randomAnime.media.title.romaji,
@@ -120,15 +120,15 @@ class RandomAnimeService {
                 genres: randomAnime.media.genres,
                 year: randomAnime.media.seasonYear,
                 description: randomAnime.media.description,
-                coverImage: randomAnime.media.coverImage.extraLarge || 
-                           randomAnime.media.coverImage.large || 
-                           null
+                coverImage: randomAnime.media.coverImage.extraLarge ||
+                    randomAnime.media.coverImage.large ||
+                    null
             };
         } catch (error) {
-            logger.error('Anime fetch failed', { 
-                username, 
-                errorMessage: error.message, 
-                errorStack: error.stack 
+            logger.error('Anime fetch failed', {
+                username,
+                errorMessage: error.message,
+                errorStack: error.stack
             });
             throw error;
         }
@@ -142,10 +142,10 @@ class RandomAnimeService {
                 .replace(/\s+/g, ' ')
                 .trim()
             : 'No description available';
-    
+
         // Direct link to the specific anime page using its ID
         const animeDirectLink = `https://anilist.co/anime/${anime.id}`;
-    
+
         // Emoji mapping for different statuses and formats
         const statusEmojis = {
             'FINISHED': '✅',
@@ -153,7 +153,7 @@ class RandomAnimeService {
             'NOT_YET_RELEASED': '⏳',
             'CANCELLED': '❌'
         };
-    
+
         const formatEmojis = {
             'TV': '📺',
             'MOVIE': '🎬',
@@ -163,64 +163,64 @@ class RandomAnimeService {
             'ONA': '💻',
             'MANGA': '📖'
         };
-    
+
         const embedBuilder = new EmbedBuilder()
             .setColor('#0099ff')
             .setTitle(`🌟 ${anime.title}`)
             .setURL(animeDirectLink)
             .setDescription(
-                `📝 ${cleanDescription.length > 200 
-                    ? cleanDescription.substring(0, 200) + '...' 
+                `📝 ${cleanDescription.length > 200
+                    ? cleanDescription.substring(0, 200) + '...'
                     : cleanDescription}`
             )
             .addFields(
-                { 
-                    name: '📡 Status', 
-                    value: `${statusEmojis[anime.status] || '❓'} ${anime.status}`, 
+                {
+                    name: '📡 Status',
+                    value: `${statusEmojis[anime.status] || '❓'} ${anime.status}`,
                     inline: true
                 },
-                { 
-                    name: '🎞️ Episodes', 
-                    value: `🔢 ${anime.episodes.toString()}`, 
-                    inline: true 
+                {
+                    name: '🎞️ Episodes',
+                    value: `🔢 ${anime.episodes.toString()}`,
+                    inline: true
                 },
-                { 
-                    name: '🎭 Format', 
-                    value: `${formatEmojis[anime.format] || '🎴'} ${anime.format}`, 
-                    inline: true 
+                {
+                    name: '🎭 Format',
+                    value: `${formatEmojis[anime.format] || '🎴'} ${anime.format}`,
+                    inline: true
                 },
-                { 
-                    name: '📅 Year', 
-                    value: `🗓️ ${anime.year?.toString() || 'Unknown'}`, 
-                    inline: true 
+                {
+                    name: '📅 Year',
+                    value: `🗓️ ${anime.year?.toString() || 'Unknown'}`,
+                    inline: true
                 },
-                { 
-                    name: '🏷️ Genres', 
-                    value: anime.genres.length > 0 
-                        ? anime.genres.map(genre => `#${genre}`).join(' ') 
-                        : 'No genres', 
-                    inline: false 
+                {
+                    name: '🏷️ Genres',
+                    value: anime.genres.length > 0
+                        ? anime.genres.map(genre => `#${genre}`).join(' ')
+                        : 'No genres',
+                    inline: false
                 },
-                { 
-                    name: '⭐ Your Score', 
-                    value: `📊 ${anime.userScore?.toString() || 'Not rated'}`, 
-                    inline: true 
+                {
+                    name: '⭐ Your Score',
+                    value: `📊 ${anime.userScore?.toString() || 'Not rated'}`,
+                    inline: true
                 },
-                { 
-                    name: '📈 Average Score', 
-                    value: `🌈 ${anime.averageScore || 'N/A'}%`, 
-                    inline: true 
+                {
+                    name: '📈 Average Score',
+                    value: `🌈 ${anime.averageScore || 'N/A'}%`,
+                    inline: true
                 }
             )
-            .setFooter({ 
-                text: '🔗 Click title to view on AniList' 
+            .setFooter({
+                text: '🔗 Click title to view on AniList'
             });
-    
+
         // Add thumbnail only if a valid image URL exists
         if (anime.coverImage && this.isValidHttpUrl(anime.coverImage)) {
             embedBuilder.setImage(anime.coverImage);
         }
-    
+
         return embedBuilder;
     }
 
@@ -229,7 +229,7 @@ class RandomAnimeService {
             const url = new URL(string);
             return url.protocol === "http:" || url.protocol === "https:";
         } catch (_) {
-            return false;  
+            return false;
         }
     }
 
@@ -237,9 +237,9 @@ class RandomAnimeService {
         try {
             // Immediately defer the reply to prevent timeout
             await interaction.deferReply({ ephemeral: false });
-    
+
             const username = interaction.options.getString('username');
-            
+
             // Early validation with quick response
             if (!username) {
                 await interaction.editReply({
@@ -248,24 +248,24 @@ class RandomAnimeService {
                 });
                 return;
             }
-    
+
             try {
                 const randomAnime = await this.fetchRandomAnime(username);
-                
+
                 const embed = this.createAnimeEmbed(randomAnime);
-                
-                await interaction.editReply({ 
+
+                await interaction.editReply({
                     embeds: [embed],
                     ephemeral: false
                 });
-    
+
             } catch (fetchError) {
-                logger.error('Anime command processing error', { 
-                    username, 
+                logger.error('Anime command processing error', {
+                    username,
                     errorMessage: fetchError.message,
                     errorStack: fetchError.stack
                 });
-    
+
                 // Guaranteed response to prevent "thinking" state
                 await interaction.editReply({
                     content: `❌ Error fetching anime for ${username}. Possible reasons:
@@ -277,15 +277,15 @@ class RandomAnimeService {
                 });
             }
 
-    
+
         } catch (globalError) {
             // Last-resort error handling
             logger.error('Critical error in anime command', {
                 errorMessage: globalError.message,
                 errorStack: globalError.stack
             });
-            
-    
+
+
             try {
                 // Final attempt to respond to interaction
                 if (!interaction.replied && !interaction.deferred) {
@@ -298,7 +298,7 @@ class RandomAnimeService {
                         content: "❌ An unexpected error occurred. Please try again later.",
                         ephemeral: true
                     });
-                    
+
                 }
 
 
@@ -312,8 +312,8 @@ class RandomAnimeService {
                     replyError
                 });
             }
-        } 
-        
+        }
+
     }
 }
 
@@ -326,6 +326,6 @@ module.exports = RandomAnimeService;
 //          endTimer(error ? 'failure' : 'success');
 //      }
 //  }
-//  
+//
 
 // The above is for future me to impliment
