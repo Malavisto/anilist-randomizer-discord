@@ -20,7 +20,7 @@ Grafana is used to visualize the metrics collected by Prometheus. Follow these s
 3. **Create a Dashboard**:
      - Navigate to **Home > Dashboards**.
      - Click **Import**.
-     - Drag the [dashboard JSON](https://github.com/Malavisto/anilist-randomizer-discord/prometheus/grafana_dashboard.json)
+     - Drag the [dashboard JSON](https://github.com/Malavisto/anilist-randomizer-discord/blob/main/prometheus/grafana_dashboard.json)
      - Import the Dashboard
 
 **THESE INSTRUCTIONS ARE FOR A NATIVE GRAFANA INSTALL, FOR DOCKER CHANGE `http://localhost:9091` to `http://prometheus:9090`**

@@ -43,7 +43,7 @@ services:
 
 # Prometheus for metrics scraping
 
-prometheus:  # Check https://github.com/Malavisto/anilist-randomizer-discord/prometheus/README.md for more info
+prometheus:  # Check https://github.com/Malavisto/anilist-randomizer-discord/tree/main/prometheus for more info
   image: prom/prometheus
   container_name: anilist-prometheus
   networks:
