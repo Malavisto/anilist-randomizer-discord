@@ -1,5 +1,6 @@
 ---
 services:
+# Main Bot Container
   discord-bot:
     image: ghcr.io/malavisto/anilist-randomizer-discord:main
 #    build: .  #Uncomment to build image locally instead
@@ -26,6 +27,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
+# Watchtower for auto updates
   watchtower:
       image: containrrr/watchtower
       environment:
@@ -39,19 +41,19 @@ services:
         - /var/run/docker.sock:/var/run/docker.sock
       command: --interval 30
 
-# Prometheus setup for new setups
+# Prometheus for metrics scraping
 
-#  prometheus:
-#    image: prom/prometheus
-#    container_name: anilist-prometheus
-#    networks:
-#      - services
-#    volumes:
-#      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-#    ports:
-#      - "9091:9090"
-#    depends_on:
-#      - discord-bot        
+prometheus:  # Check https://github.com/Malavisto/anilist-randomizer-discord/prometheus/README.md for more info
+  image: prom/prometheus
+  container_name: anilist-prometheus
+  networks:
+    - services
+  volumes:
+    - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  ports:
+    - "9091:9090"
+  depends_on:
+    - discord-bot        
 
 networks:
   services:
