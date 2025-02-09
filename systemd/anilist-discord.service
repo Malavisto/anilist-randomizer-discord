@@ -1,24 +1,17 @@
 [Unit]
 Description=Anilist Discord Bot Service
-After=network.target nginx.service
-requires=nginx.service
+After=network.target
 
 [Service]
 Type=notify
-User=techkid
-Group=techkid
+User=$USER
+Group=$USER
 WorkingDirectory=/opt/anilist-randomizer-discord
 Environment="NODE_ENV=production"
 ExecStart=npm start
 Restart=on-failure
 RestartSec=10
 TimeoutStopSec=60
-
-# Security hardening
-PrivateTmp=true
-ProtectSystem=full
-ProtectHome=true
-NoNewPrivileges=true
 
 # Resource limits
 LimitNOFILE=65535
