@@ -50,9 +50,9 @@ class MetricsService {
         try {
             this.commandCounter.inc({ command_type: commandType, guild_id: guildId });
             return (status = 'success') => {
-                const endTimer = this.commandDuration.startTimer({ 
+                const endTimer = this.commandDuration.startTimer({
                     command_type: commandType,
-                    status 
+                    status
                 });
                 endTimer();
             };
@@ -64,9 +64,9 @@ class MetricsService {
     // Enhanced API request tracking
     trackApiRequest(endpoint, status, username) {
         try {
-            this.apiRequestCounter.inc({ 
-                endpoint, 
-                status, 
+            this.apiRequestCounter.inc({
+                endpoint,
+                status,
                 username: username || 'unknown'
             });
         } catch (error) {
@@ -86,9 +86,9 @@ class MetricsService {
     // Track errors
     trackError(errorType, commandType) {
         try {
-            this.errorCounter.inc({ 
-                error_type: errorType, 
-                command_type: commandType 
+            this.errorCounter.inc({
+                error_type: errorType,
+                command_type: commandType
             });
         } catch (error) {
             logger.error('Error tracking error metrics', { error });
@@ -98,9 +98,9 @@ class MetricsService {
     // Update user-specific stats
     updateUserStats(metricType, username, value) {
         try {
-            this.userStatsGauge.set({ 
-                metric_type: metricType, 
-                username 
+            this.userStatsGauge.set({
+                metric_type: metricType,
+                username
             }, value);
         } catch (error) {
             logger.error('Error updating user stats metrics', { error });

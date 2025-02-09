@@ -82,10 +82,10 @@ class AnimeRecommendationService {
             metricsService.trackApiRequest('recommendation', 'success', username);
 
             // Fetch user's media list
-            const response = await axios.post('https://graphql.anilist.co', 
-                { 
-                    query, 
-                    variables: { username } 
+            const response = await axios.post('https://graphql.anilist.co',
+                {
+                    query,
+                    variables: { username }
                 },
                 {
                     headers: {
@@ -98,7 +98,7 @@ class AnimeRecommendationService {
             // Get user's anime list and find highest-rated anime
             const lists = response.data.data.MediaListCollection.lists;
             const allEntries = lists.flatMap(list => list.entries);
-            
+
             // Sort entries by score, get highest-rated anime
             const highestRatedEntries = allEntries
                 .filter(entry => entry.score > 0)
@@ -111,9 +111,9 @@ class AnimeRecommendationService {
 
             // Use genres from highest-rated anime to find similar recommendations
             const genresOfInterest = highestRatedEntries
-            .flatMap(entry => entry.media.genres)
-            .filter((genre, index, self) => self.indexOf(genre) === index)
-            .slice(0, 3); // Limit to top 3 genres
+                .flatMap(entry => entry.media.genres)
+                .filter((genre, index, self) => self.indexOf(genre) === index)
+                .slice(0, 3); // Limit to top 3 genres
 
             // Second query to find recommendations based on genres
             const recommendationQuery = `
@@ -145,9 +145,9 @@ class AnimeRecommendationService {
             }
             `;
 
-            const recommendationResponse = await axios.post('https://graphql.anilist.co', 
-                { 
-                    query: recommendationQuery, 
+            const recommendationResponse = await axios.post('https://graphql.anilist.co',
+                {
+                    query: recommendationQuery,
                     variables: { genres: genresOfInterest }
                 },
                 {
@@ -184,7 +184,7 @@ class AnimeRecommendationService {
                 year: recommendedAnime.seasonYear,
                 averageScore: recommendedAnime.averageScore,
                 coverImage: recommendedAnime.coverImage.extraLarge || recommendedAnime.coverImage.large,
-                matchedGenres: genresOfInterest.filter(genre => 
+                matchedGenres: genresOfInterest.filter(genre =>
                     recommendedAnime.genres.includes(genre)
                 )
             };
@@ -192,10 +192,10 @@ class AnimeRecommendationService {
         } catch (error) {
             metricsService.trackError('recommendation_failure', 'anime_recommend');
             metricsService.trackApiRequest('recommendation', 'failure', username);
-            logger.error('Anime recommendation fetch failed', { 
-                username, 
-                errorMessage: error.message, 
-                errorStack: error.stack 
+            logger.error('Anime recommendation fetch failed', {
+                username,
+                errorMessage: error.message,
+                errorStack: error.stack
             });
             throw error;
         }
@@ -216,51 +216,51 @@ class AnimeRecommendationService {
             .setTitle(`🌟 Recommended Anime for ${username}`)
             .setURL(animeDirectLink)
             .setDescription(
-                `📝 ${cleanDescription.length > 200 
-                    ? cleanDescription.substring(0, 200) + '...' 
+                `📝 ${cleanDescription.length > 200
+                    ? cleanDescription.substring(0, 200) + '...'
                     : cleanDescription}`
             )
             .addFields(
-                { 
-                    name: '🎬 Title', 
-                    value: anime.title, 
-                    inline: false 
+                {
+                    name: '🎬 Title',
+                    value: anime.title,
+                    inline: false
                 },
-                { 
-                    name: '📡 Show Status', 
-                    value: anime.status, 
-                    inline: true 
+                {
+                    name: '📡 Show Status',
+                    value: anime.status,
+                    inline: true
                 },
-                { 
-                    name: '🎞️ Episodes', 
-                    value: anime.episodes.toString(), 
-                    inline: true 
+                {
+                    name: '🎞️ Episodes',
+                    value: anime.episodes.toString(),
+                    inline: true
                 },
-                { 
-                    name: '🎭 Format', 
-                    value: anime.format, 
-                    inline: true 
+                {
+                    name: '🎭 Format',
+                    value: anime.format,
+                    inline: true
                 },
-                { 
-                    name: '📅 Year', 
-                    value: anime.year?.toString() || 'Unknown', 
-                    inline: true 
+                {
+                    name: '📅 Year',
+                    value: anime.year?.toString() || 'Unknown',
+                    inline: true
                 },
-                { 
-                    name: '🏷️ Matched Genres', 
-                    value: anime.matchedGenres.length > 0 
-                        ? anime.matchedGenres.map(genre => `#${genre}`).join(' ') 
-                        : 'No genre matches', 
-                    inline: false 
+                {
+                    name: '🏷️ Matched Genres',
+                    value: anime.matchedGenres.length > 0
+                        ? anime.matchedGenres.map(genre => `#${genre}`).join(' ')
+                        : 'No genre matches',
+                    inline: false
                 },
-                { 
-                    name: '📈 Average Score', 
-                    value: `${anime.averageScore || 'N/A'}%`, 
-                    inline: true 
+                {
+                    name: '📈 Average Score',
+                    value: `${anime.averageScore || 'N/A'}%`,
+                    inline: true
                 }
             )
-            .setFooter({ 
-                text: '🔗 Click title to view on AniList' 
+            .setFooter({
+                text: '🔗 Click title to view on AniList'
             });
 
         // Validate and set image if URL is valid
@@ -269,7 +269,7 @@ class AnimeRecommendationService {
                 const url = new URL(string);
                 return url.protocol === "http:" || url.protocol === "https:";
             } catch (_) {
-                return false;  
+                return false;
             }
         };
 
@@ -285,7 +285,7 @@ class AnimeRecommendationService {
             await interaction.deferReply({ ephemeral: false });
 
             const username = interaction.options.getString('username');
-            
+
             if (!username) {
                 await interaction.editReply({
                     content: "❌ Please provide a valid AniList username.",
@@ -296,17 +296,17 @@ class AnimeRecommendationService {
 
             try {
                 const recommendedAnime = await this.fetchAnimeRecommendation(username);
-                
+
                 const recommendationEmbed = this.createAnimeRecommendationEmbed(username, recommendedAnime);
-                
-                await interaction.editReply({ 
+
+                await interaction.editReply({
                     embeds: [recommendationEmbed],
                     ephemeral: false
                 });
 
             } catch (fetchError) {
-                logger.error('Anime recommendation command processing error', { 
-                    username, 
+                logger.error('Anime recommendation command processing error', {
+                    username,
                     errorMessage: fetchError.message,
                     errorStack: fetchError.stack
                 });

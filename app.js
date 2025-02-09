@@ -9,7 +9,7 @@ const RandomAnimeService = require('./modules/RandomAnimeService');
 const AnimeStatsService = require('./modules/AnimeStatsService');
 const metricsService = require('./metrics');
 
-const logger = require('./logger');  
+const logger = require('./logger');
 require('dotenv').config();
 
 const dis_token = process.env.DISCORD_TOKEN;
@@ -60,9 +60,9 @@ class AniListDiscordBot {
                 res.set('Content-Type', client.register.contentType);
                 res.send(metrics);
             } catch (error) {
-                logger.error('Failed to retrieve metrics', { 
-                    error: error.message, 
-                    stack: error.stack 
+                logger.error('Failed to retrieve metrics', {
+                    error: error.message,
+                    stack: error.stack
                 });
                 res.status(500).send('Failed to retrieve metrics');
             }
@@ -76,7 +76,7 @@ class AniListDiscordBot {
         // Bot is ready - register slash commands
         this.client.once('ready', async () => {
             logger.info(`Logged in as ${this.client.user.tag}`);
-            
+
             // Get all guilds the bot is in and register commands
             const guilds = this.client.guilds.cache;
             guilds.forEach(async (guild) => {
@@ -93,14 +93,14 @@ class AniListDiscordBot {
         this.client.on('error', (error) => {
             logger.error('Discord client error', { error });
         });
-        
+
         // Interaction create event (handles slash commands)
         this.client.on('interactionCreate', async (interaction) => {
             if (!interaction.isChatInputCommand()) return;
-        
+
             let endTimer;
             try {
-                switch(interaction.commandName) {
+                switch (interaction.commandName) {
                     case 'randomanime':
                         endTimer = metricsService.trackCommand('random_anime');
                         await this.randomAnimeService.handleRandomAnimeCommand(interaction);
@@ -129,7 +129,7 @@ class AniListDiscordBot {
         const randomAnimeCommand = new SlashCommandBuilder()
             .setName('randomanime')
             .setDescription('Get a random anime from a user\'s AniList')
-            .addStringOption(option => 
+            .addStringOption(option =>
                 option.setName('username')
                     .setDescription('AniList username to fetch anime from')
                     .setRequired(true)
@@ -139,7 +139,7 @@ class AniListDiscordBot {
         const animeStatsCommand = new SlashCommandBuilder()
             .setName('animestats')
             .setDescription('Get anime stats for an AniList user')
-            .addStringOption(option => 
+            .addStringOption(option =>
                 option.setName('username')
                     .setDescription('AniList username to fetch stats from')
                     .setRequired(true)
@@ -149,7 +149,7 @@ class AniListDiscordBot {
         const animeRecommendCommand = new SlashCommandBuilder()
             .setName('animerecommend')
             .setDescription('Get an anime recommendation based on your list')
-            .addStringOption(option => 
+            .addStringOption(option =>
                 option.setName('username')
                     .setDescription('AniList username to generate recommendation from')
                     .setRequired(true)
