@@ -13,8 +13,6 @@ const logger = require('./logger');
 require('dotenv').config();
 
 const dis_token = process.env.DISCORD_TOKEN;
-const ani_secret = process.env.CLIENT_SECRET;
-const ani_id = process.env.CLIENT_ID;
 
 // Main Bot Logic
 class AniListDiscordBot {
@@ -27,10 +25,6 @@ class AniListDiscordBot {
             ]
         });
         logger.info('AniListDiscordBot initialized');
-
-        // AniList API credentials
-        this.CLIENT_ID = ani_id;
-        this.CLIENT_SECRET = ani_secret;
 
         // Discord bot token
         this.TOKEN = dis_token;

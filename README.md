@@ -1,44 +1,44 @@
-## Anilist Randomizer for Discord
+# Anilist Insights for Discord
 
-A Discord bot that connects with [AniList](https://anilist.co/) to randomly select anime from a user's AniList profile. This bot makes it easy to pick your next watch by fetching detailed information about a random anime from your lists.
+A Discord bot that connects with [AniList](https://anilist.co/) to do multiple tasks based on a user's AniList profile.
+
+
+## Disclaimers
+
+This project was made as an testing ground for [me](https://github.com/malavisto) to exeriment with AI, I do try to maintain the repo on my own though
 
 **This bot is not affiliated with [Anilist](https://anilist.co) nor [Discord](https://discord.com)**
 
+**Some parts of this repo are AI-Generated**
+
 ## Features
 
-- Fetches a random anime from an AniList account.
-- Provides details such as:
-  - Anime title
-  - Description
-  - Number of episodes
-  - Format and status
-  - Genres and scores (user and average)
-  - Release year and cover image
+- Fetches a random anime from an Anilist account.
+- Generates stats from an Anilist Account.
+- Generates a recomendation based on an Anilist account and fetches it.
 - Interactive slash commands with error handling for invalid usernames or empty lists.
-- AniList and Discord API integration with OAuth2 and robust logging.
+- Has a built-in prometheus endpoint and decent logging.
 
-## Setup Instructions
+## Setup
 
 ### Prerequisites
 
-1. [Node.js](https://nodejs.org/) version 16 or later installed.
+1. [Node.js](https://nodejs.org/) version 23 or later installed or [Docker](https://www.docker.com/) with docker compose.
 2. A Discord bot token. Create one on the [Discord Developer Portal](https://discord.com/developers/applications).
-3. AniList API credentials. Register a client at [AniList API](https://anilist.co/settings/developer/).
-4. Install dependencies:
+4. Install dependencies **NodeJS Only**:
    ```
-   npm install
+   pnpm install
    ```
 
 ### Configuration
 
-1. Create a `.env` file in the root of your project with the following variables:
+1. Create a .env file with the [example](https://github.com/Malavisto/anilist-randomizer-discord/blob/main/.env.example)
    ```
-   DISCORD_TOKEN=your_discord_token
-   CLIENT_ID=your_anilist_client_id
-   CLIENT_SECRET=your_anilist_client_secret
+   cp .env.example .env
    ```
+2. Modify environment variables in the .env
 
-2. Make sure your bot has the required Discord permissions:
+3. Make sure your bot has the required Discord permissions:
    - Slash commands
    - Read and send messages in the target channels.
 
@@ -49,13 +49,57 @@ Start the bot by running:
 ```
 node start
 ```
+or 
+```
+docker compose up -d
+```
 
-The bot will log in and register the `/randomanime` command in all the servers it's added to.
+The bot will log in and register the commands in all the servers it's added to.
 
 ## Usage
 
-1. Use the `/randomanime` command in Discord and provide your AniList username.
+### Random Anime
+1. Use the `/random_anime` command in Discord and provide your AniList username.
 2. The bot will fetch a random anime from your AniList and display its details in an embed.
+
+### Anime Recomendations
+1. Use the `/anime_recommend` command in Discord and provide your AniList username.
+2. The bot generate recomendations based on your anilist and pick one out of five anime and display its details in an embed.
+
+### Anime Stats
+1. Use the `/anime_stats` command in Discord and provide your AniList username.
+2. The bot will generate stats from your AniList and display them an embed.
+
+## Development
+
+### Prerequisites
+
+1. [Node.js](https://nodejs.org/) version 23 or later installed.
+2. A Discord bot token. Create one on the [Discord Developer Portal](https://discord.com/developers/applications).
+4. Install dependencies:
+   ```
+   pnpm install
+   ```
+
+### Configuration
+
+1. Create a .env file with the [example](https://github.com/Malavisto/anilist-randomizer-discord/blob/main/.env.example)
+   ```
+   cp .env.example .env
+   ```
+2. Modify environment variables in the .env
+
+3. Make sure your bot has the required Discord permissions:
+   - Slash commands
+   - Read and send messages in the target channels.
+
+### Running the Bot
+
+Start the bot by running:
+
+```
+pnpm start
+```
 
 ## Development Notes
 
@@ -67,7 +111,10 @@ The bot will log in and register the `/randomanime` command in all the servers i
 
 ### Key Files
 
+- **modules/** Custom modules used by main app
 - **app.js**: Main application logic.
+- **logger.js**: Logging module.
+- **metrics.js**: Prometheus metrics module.
 - **.env**: Stores sensitive configuration variables.
 
 ## Contributions
